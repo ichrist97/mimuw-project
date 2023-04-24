@@ -2,15 +2,17 @@ package database
 
 import (
 	"fmt"
-	"time"
 	"github.com/gocql/gocql"
+	"time"
 )
 
 var Session *gocql.Session
 
-func initConnection() {
-	var err error 
+// automatically called before main() when import as package in go
+func init() {
+	var err error
 	cluster := gocql.NewCluster("127.0.0.1")
+	cluster.Keyspace = "mimuwapi"
 	cluster.Consistency = gocql.Quorum
 	cluster.ConnectTimeout = time.Second * 10
 
@@ -20,5 +22,4 @@ func initConnection() {
 	}
 
 	fmt.Println("Connected to Cassandra")
-	defer session.Close()
 }

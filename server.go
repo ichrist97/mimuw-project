@@ -2,29 +2,34 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	db "mimuw-project/database"
+	handler "mimuw-project/handler"
 	model "mimuw-project/model"
+	"reflect"
 )
 
 func main() {
-    app := fiber.New()
+	app := fiber.New()
 
 	// Initialize default config
 	app.Use(logger.New())
 
-    app.Get("/", func(c *fiber.Ctx) error {
-        return c.SendString("Hello Allezon!")
-    })
+	// init cassandra connection
+	CassandraSession := db.Session
+	defer CassandraSession.Close()
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Hello Allezon!")
+	})
 
 	// use case 1 adding user tags
 	app.Post("/user_tags", model.ValidateUserTagEvent, func(c *fiber.Ctx) error {
 		// validate request body
 		body := new(model.UserTagEvent)
 		c.BodyParser(&body)
-
-		return c.SendStatus(204)
+		return handler.AddUserTag(c, body)
 	})
 
 	// POST /user_profiles/{cookie}?time_range=<time_range>?limit=<limit>
@@ -48,10 +53,10 @@ func main() {
 
 	// Last middleware to match anything
 	/*
-	app.Use(func(c *fiber.Ctx) {
-		c.SendStatus(404) // => 404 "Not Found"
-	})
+		app.Use(func(c *fiber.Ctx) {
+			c.SendStatus(404) // => 404 "Not Found"
+		})
 	*/
 
-    app.Listen(":3000")
+	app.Listen(":3000")
 }
