@@ -3,17 +3,20 @@ package handler
 import (
 	"fmt"
 	"strconv"
+	"strings"
+	"time"
 
 	db "mimuw-project/database"
 	model "mimuw-project/model"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func GetUserProfiles(c *fiber.Ctx) error {
 	var cookie = c.Params("cookie")
-	fmt.Println(cookie)
 	var timeRangeStr = c.Query("time_range")
 
 	// TODO check correct time range format
@@ -21,19 +24,16 @@ func GetUserProfiles(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Time range required")
 	}
 	// check and parse time range
-	//var timeRangeSplit = strings.Split(timeRangeStr, "_")
-	//var timeFormat = "2006-01-02T15:04:05.000Z" // exactly this format
-	/*
-		var timestampFrom, err0 = time.Parse(timeFormat, timeRangeSplit[0])
-		var timestampEnd, err1 = time.Parse(timeFormat, timeRangeSplit[1])
-		if err0 != nil || err1 != nil {
-			fmt.Println("Failed parsing time range")
-			return c.SendStatus(500)
-		}
-	*/
+	var timeRangeSplit = strings.Split(timeRangeStr, "_")
 
-	//fmt.Println(timestampFrom)
-	//fmt.Println(timestampEnd)
+	// cast to time object
+	var timeFormat = "2006-01-02T15:04:05.000Z" // exactly this format
+	var timestampFrom, err0 = time.Parse(timeFormat, timeRangeSplit[0])
+	var timestampEnd, err1 = time.Parse(timeFormat, timeRangeSplit[1])
+	if err0 != nil || err1 != nil {
+		fmt.Println("Failed parsing time range")
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid time range")
+	}
 
 	// parse limit
 	var limitStr = c.Query("limit")
@@ -48,8 +48,8 @@ func GetUserProfiles(c *fiber.Ctx) error {
 	// read user tags for cookie from database
 	coll := db.DB.Database("mimuw").Collection("user_tags")
 
-	// TODO sort user tags in descending time order
-	// TODO filter by time
+	// set limit and sort descending by timestampg
+	opts := options.Find().SetLimit(int64(limit)).SetSort(bson.D{{"time", -1}})
 
 	// get views
 	viewsFilter := bson.D{
@@ -58,11 +58,13 @@ func GetUserProfiles(c *fiber.Ctx) error {
 			bson.A{
 				bson.D{{"cookie", bson.D{{"$eq", cookie}}}},
 				bson.D{{"action", bson.D{{"$eq", "VIEW"}}}},
+				bson.D{{"time", bson.D{{"$gte", primitive.NewDateTimeFromTime(timestampFrom)}}}},
+				bson.D{{"time", bson.D{{"$lte", primitive.NewDateTimeFromTime(timestampEnd)}}}},
 			},
 		},
 	}
 
-	viewsCursor, viewsErr := coll.Find(db.Ctx, viewsFilter)
+	viewsCursor, viewsErr := coll.Find(db.Ctx, viewsFilter, opts)
 	if viewsErr != nil {
 		fmt.Println("Failed to get user profiles")
 		fmt.Println("Errors", err.Error())
@@ -75,6 +77,10 @@ func GetUserProfiles(c *fiber.Ctx) error {
 		fmt.Println("Errors", err.Error())
 		return c.SendStatus(500)
 	}
+	// empty result
+	if viewsResults == nil {
+		viewsResults = []model.UserTagEvent{}
+	}
 
 	// get buys
 	buysFilter := bson.D{
@@ -83,11 +89,13 @@ func GetUserProfiles(c *fiber.Ctx) error {
 			bson.A{
 				bson.D{{"cookie", bson.D{{"$eq", cookie}}}},
 				bson.D{{"action", bson.D{{"$eq", "BUY"}}}},
+				bson.D{{"time", bson.D{{"$gte", primitive.NewDateTimeFromTime(timestampFrom)}}}},
+				bson.D{{"time", bson.D{{"$lte", primitive.NewDateTimeFromTime(timestampEnd)}}}},
 			},
 		},
 	}
 
-	buysCursor, buysErr := coll.Find(db.Ctx, buysFilter)
+	buysCursor, buysErr := coll.Find(db.Ctx, buysFilter, opts)
 	if buysErr != nil {
 		fmt.Println("Failed to get user profiles")
 		fmt.Println("Errors", err.Error())
@@ -99,6 +107,10 @@ func GetUserProfiles(c *fiber.Ctx) error {
 	if err = buysCursor.All(db.Ctx, &buysResults); err != nil {
 		fmt.Println("Errors", err.Error())
 		return c.SendStatus(500)
+	}
+	// empty result
+	if buysResults == nil {
+		buysResults = []model.UserTagEvent{}
 	}
 
 	if err != nil {
