@@ -29,7 +29,7 @@ echo "
 use mimuwapi;
 create table userTagEvents (
 id UUID,
-time text,
+time timestamp,
 cookie text,
 country text,
 device text,
@@ -37,4 +37,9 @@ action text,
 origin text,
 PRIMARY KEY(id)
 );" | cqlsh
+```
+
+Create secondary index for cookie lookup:
+```
+CREATE INDEX cookie ON mimuwapi.userTagEvents(cookie);
 ```

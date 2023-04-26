@@ -1,34 +1,12 @@
 package model
 
 import (
+	"time"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-// device enum
-type Device int
-
-const (
-	Mobile Device = iota + 1
-	PC
-	TV
-)
-
-func DeviceString(d Device) string {
-	return []string{"Mobile", "PC", "TV"}[d]
-}
-
-// action enum
-type Action int
-
-const (
-	VIEW Action = iota + 1
-	BUY
-)
-
-func ActionString(a Action) string {
-	return []string{"VIEW", "BUY"}[a]
-}
 
 type Product struct {
 	ProductId  string `json:"product_id" validate:"required"`
@@ -38,13 +16,14 @@ type Product struct {
 }
 
 type UserTagEvent struct {
-	Time        string  `json:"time" validate:"required"`
-	Cookie      string  `json:"cookie" validate:"required"`
-	Country     string  `json:"country" validate:"required"`
-	Device      Device  `json:"device" binding:"required,enum"`
-	Action      Action  `json:"action" binding:"required,enum"`
-	Origin      string  `json:"origin" validate:"required"`
-	ProductInfo Product `json:"product_info" validate:"dive"`
+	Id          primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Time        time.Time          `json:"time" validate:"required"`
+	Cookie      string             `json:"cookie" validate:"required"`
+	Country     string             `json:"country" validate:"required"`
+	Device      string             `json:"device" validate:"required"`
+	Action      string             `json:"action" validate:"required"`
+	Origin      string             `json:"origin" validate:"required"`
+	ProductInfo Product            `json:"product_info" validate:"dive"`
 }
 
 type ErrorResponse struct {
