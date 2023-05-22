@@ -1,4 +1,4 @@
-package handler
+package controller
 
 import (
 	"fmt"
@@ -19,7 +19,6 @@ func GetUserProfiles(c *fiber.Ctx) error {
 	var cookie = c.Params("cookie")
 	var timeRangeStr = c.Query("time_range")
 
-	// TODO check correct time range format
 	if timeRangeStr == "" {
 		return c.Status(fiber.StatusBadRequest).SendString("Time range required")
 	}

@@ -17,8 +17,8 @@ var Ctx context.Context
 
 func readEnv() (string, string) {
 	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if err == nil {
+		fmt.Println("Loaded .env file")
 	}
 
 	mongo_host := os.Getenv("MONGO_HOST")
