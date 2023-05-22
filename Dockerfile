@@ -1,6 +1,7 @@
 FROM golang:1.20-alpine as build
 
-WORKDIR /app
+ADD . /go/src/mimuw-project
+WORKDIR /go/src/mimuw-project
 
 # Download necessary Go modules
 COPY go.mod ./
@@ -17,7 +18,7 @@ FROM gcr.io/distroless/base-debian10
 
 WORKDIR /
 
-COPY --from=build /app/out /app
+COPY --from=build /go/src/mimuw-project/out /app
 
 EXPOSE 8080
 
