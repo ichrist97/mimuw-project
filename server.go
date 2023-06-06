@@ -1,14 +1,35 @@
 package main
 
 import (
+	"fmt"
 	controller "mimuw-project/controller"
 	model "mimuw-project/model"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/joho/godotenv"
 )
 
+func readEnv() {
+	err := godotenv.Load()
+	if err == nil {
+		fmt.Println("Loaded .env file")
+	}
+}
+
 func main() {
+	// load environment from local file
+	readEnv()
+
+	// activate debug mode
+	DEBUG_MODE := os.Getenv("DEBUG")
+	DEBUG := false
+	if DEBUG_MODE == "1" {
+		DEBUG = true
+		fmt.Println("DEBUG MODE")
+	}
+
 	app := fiber.New()
 
 	// Initialize default config
@@ -29,7 +50,7 @@ func main() {
 	// POST /user_profiles/{cookie}?time_range=<time_range>?limit=<limit>
 	// use case 2 getting user profiles
 	app.Post("/user_profiles/:cookie", func(c *fiber.Ctx) error {
-		return controller.GetUserProfiles(c)
+		return controller.GetUserProfiles(c, DEBUG)
 	})
 
 	// POST /aggregates?time_range=<time_from>_<time_to>&action=BUY&brand_id=Nike&aggregates=COUNT
@@ -38,5 +59,10 @@ func main() {
 		return controller.GetAggregate(c)
 	})
 
-	app.Listen(":3000")
+	PORT := os.Getenv("PORT")
+	if PORT == "" {
+		PORT = "3000" // default
+	}
+
+	app.Listen(fmt.Sprintf(":%s", PORT))
 }

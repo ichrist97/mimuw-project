@@ -15,7 +15,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func GetUserProfiles(c *fiber.Ctx) error {
+func logResponses(c *fiber.Ctx, res model.UserProfile) {
+	// debug response from api
+	body := new(model.UserProfile)
+	c.BodyParser(&body)
+
+	// actual generated response
+	coll := db.DB.Database("mimuw").Collection("log_profiles")
+
+	doc := map[string]interface{}{
+		"true":      body,
+		"generated": res,
+	}
+
+	_, err := coll.InsertOne(db.Ctx, doc)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 	var cookie = c.Params("cookie")
 	var timeRangeStr = c.Query("time_range")
 
@@ -118,7 +137,15 @@ func GetUserProfiles(c *fiber.Ctx) error {
 		return c.SendStatus(500)
 	}
 
+	// TODO discard older events than 200 for a cookie
+
 	// create response
 	userProfile := model.UserProfile{Cookie: cookie, Views: viewsResults, Buys: buysResults}
+
+	// log response and expected result
+	if debug {
+		logResponses(c, userProfile)
+	}
+
 	return c.JSON(userProfile)
 }
