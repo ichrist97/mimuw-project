@@ -24,7 +24,7 @@ func main() {
 
 	// activate debug mode
 	DEBUG_MODE := os.Getenv("DEBUG")
-	DEBUG := false
+	DEBUG := false // default
 	if DEBUG_MODE == "1" {
 		DEBUG = true
 		fmt.Println("DEBUG MODE")

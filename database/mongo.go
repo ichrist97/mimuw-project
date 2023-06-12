@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -16,11 +15,6 @@ var DB *mongo.Client = ConnectDB()
 var Ctx context.Context
 
 func readEnv() (string, string) {
-	err := godotenv.Load()
-	if err == nil {
-		fmt.Println("Loaded .env file")
-	}
-
 	mongo_host := os.Getenv("MONGO_HOST")
 	if len(mongo_host) == 0 {
 		mongo_host = "localhost"
