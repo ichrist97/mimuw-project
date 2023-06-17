@@ -77,7 +77,7 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 	var timeRangeSplit = strings.Split(timeRangeStr, "_")
 
 	// cast to time object
-	var timeFormat = "2006-01-02T15:04:05.000" // exactly this format
+	var timeFormat = "2006-01-02T15:04:05" // exactly this format
 	var timestampFrom, err0 = time.Parse(timeFormat, timeRangeSplit[0])
 	var timestampEnd, err1 = time.Parse(timeFormat, timeRangeSplit[1])
 	fmt.Println(timestampFrom, timestampEnd)
