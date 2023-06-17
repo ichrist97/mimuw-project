@@ -39,6 +39,7 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 	var timeRangeStr = c.Query("time_range")
 
 	if timeRangeStr == "" {
+		fmt.Println("Bad request: time range required")
 		return c.Status(fiber.StatusBadRequest).SendString("Time range required")
 	}
 	// check and parse time range
@@ -57,6 +58,7 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 	var limitStr = c.Query("limit")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil && len(limitStr) > 0 {
+		fmt.Println("Bad request: Limit must be integer")
 		return c.Status(fiber.StatusBadRequest).SendString("Limit must be integer")
 	}
 	if limit == 0 {
@@ -84,15 +86,14 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 
 	viewsCursor, viewsErr := coll.Find(db.Ctx, viewsFilter, opts)
 	if viewsErr != nil {
-		fmt.Println("Failed to get user profiles")
-		fmt.Println("Errors", err.Error())
+		fmt.Println(err.Error())
 		return c.SendStatus(500)
 	}
 
 	// parse into struct
 	var viewsResults []model.UserTagEvent
 	if err = viewsCursor.All(db.Ctx, &viewsResults); err != nil {
-		fmt.Println("Errors", err.Error())
+		fmt.Println(err.Error())
 		return c.SendStatus(500)
 	}
 	// empty result
@@ -115,15 +116,14 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 
 	buysCursor, buysErr := coll.Find(db.Ctx, buysFilter, opts)
 	if buysErr != nil {
-		fmt.Println("Failed to get user profiles")
-		fmt.Println("Errors", err.Error())
+		fmt.Println(err.Error())
 		return c.SendStatus(500)
 	}
 
 	// parse into struct
 	var buysResults []model.UserTagEvent
 	if err = buysCursor.All(db.Ctx, &buysResults); err != nil {
-		fmt.Println("Errors", err.Error())
+		fmt.Println(err.Error())
 		return c.SendStatus(500)
 	}
 	// empty result
@@ -132,8 +132,7 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 	}
 
 	if err != nil {
-		fmt.Println("Failed to get user profiles")
-		fmt.Println("Errors", err.Error())
+		fmt.Println(err.Error())
 		return c.SendStatus(500)
 	}
 

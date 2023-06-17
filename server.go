@@ -10,19 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-/*
-func readEnv() {
-	err := godotenv.Load()
-	if err == nil {
-		fmt.Println("Loaded .env file")
-	}
-}
-*/
-
 func main() {
-	// load environment from local file
-	//readEnv()
-
 	// activate debug mode
 	DEBUG_MODE := os.Getenv("DEBUG")
 	DEBUG := false // default

@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -46,7 +45,7 @@ func ConnectDB() *mongo.Client {
 	// Create a new client and connect to the server
 	client, err := mongo.Connect(Ctx, opts)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
 	}
 	/*
 		defer func() {
@@ -59,7 +58,7 @@ func ConnectDB() *mongo.Client {
 	//ping the database
 	err = client.Ping(Ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
 	}
 	fmt.Println("Connected to MongoDB")
 	return client
