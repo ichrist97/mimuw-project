@@ -57,6 +57,16 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid query")
 	}
 
+	// print query params for debugging
+	if debug {
+		fmt.Println("time_range: ", query.TimeRange)
+		fmt.Println("Action: ", query.Action)
+		fmt.Println("Origin: ", query.Origin)
+		fmt.Println("BrandId: ", query.BrandId)
+		fmt.Println("CategoryId: ", query.CategoryId)
+		fmt.Println("Aggregates: ", query.Aggregates)
+	}
+
 	// check time range query
 	var timeRangeStr = query.TimeRange
 	if timeRangeStr == "" {
