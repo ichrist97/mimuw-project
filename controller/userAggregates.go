@@ -53,7 +53,6 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 	// parse queries
 	query := new(model.AggregateRequest)
 	if err := c.QueryParser(query); err != nil {
-		fmt.Println("Failed parsing query parameters")
 		fmt.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid query")
 	}
@@ -61,6 +60,7 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 	// check time range query
 	var timeRangeStr = query.TimeRange
 	if timeRangeStr == "" {
+		fmt.Println("Bad request: time range required")
 		return c.Status(fiber.StatusBadRequest).SendString("Time range required")
 	}
 	// check and parse time range
@@ -80,6 +80,7 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 	var action = query.Action
 	var validActions = []string{"BUY", "VIEW"}
 	if action == "" || !contains(validActions, action) {
+		fmt.Println("Bad request: valid action required")
 		return c.Status(fiber.StatusBadRequest).SendString("Valid action required")
 	}
 
@@ -93,6 +94,7 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 	}
 	for _, aggr := range query.Aggregates {
 		if !contains(validAggregates, aggr) {
+			fmt.Println("Bad request: invalid aggregates")
 			return c.Status(fiber.StatusBadRequest).SendString("Invalid aggregates")
 		}
 		if aggr == "COUNT" {
