@@ -49,7 +49,7 @@ func createTimeBoundaries(timestampFrom time.Time, timestampEnd time.Time) bson.
 	return boundaries
 }
 
-func GetAggregate(c *fiber.Ctx) error {
+func GetAggregate(c *fiber.Ctx, debug bool) error {
 	// parse queries
 	query := new(model.AggregateRequest)
 	if err := c.QueryParser(query); err != nil {
@@ -173,7 +173,31 @@ func GetAggregate(c *fiber.Ctx) error {
 	// TODO Think about the number of possible aggregates,
 	// how to calculate them and possibly store globally for later querying.
 
+	// log response and expected result
+	if debug {
+		logAggrResponses(c, &tableResults)
+	}
+
 	return c.JSON(tableResults)
+}
+
+func logAggrResponses(c *fiber.Ctx, res *model.AggregateResult) {
+	// debug response from api
+	body := new(model.AggregateResult)
+	c.BodyParser(&body)
+
+	// actual generated response
+	coll := db.DB.Database("mimuw").Collection("log_aggregations")
+
+	doc := map[string]interface{}{
+		"true":      body,
+		"generated": *res,
+	}
+
+	_, err := coll.InsertOne(db.Ctx, doc)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
 func transformToTable(results []model.AggregateQuery, CountAggr bool, SumAggr bool, action string, origin string, brandId string, categoryId string) model.AggregateResult {

@@ -57,7 +57,7 @@ func main() {
 	// POST /aggregates?time_range=<time_from>_<time_to>&action=BUY&brand_id=Nike&aggregates=COUNT
 	// use case 3 aggregated user actions / statistics
 	app.Post("/aggregates", func(c *fiber.Ctx) error {
-		return controller.GetAggregate(c)
+		return controller.GetAggregate(c, DEBUG)
 	})
 
 	PORT := os.Getenv("PORT")
