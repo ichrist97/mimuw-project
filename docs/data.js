@@ -7,7 +7,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "china",
         "product_info": {
-            "product_id": "adidas",
+            "product_id": 0,
             "brand_id": "adidas",
             "category_id": "adidas",
             "price": 2
@@ -21,7 +21,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "china",
         "product_info": {
-            "product_id": "adidas",
+            "product_id": 0,
             "brand_id": "adidas",
             "category_id": "adidas",
             "price": 4
@@ -35,7 +35,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "test",
         "product_info": {
-            "product_id": "nike",
+            "product_id": 1,
             "brand_id": "nike",
             "category_id": "nike",
             "price": 5
@@ -49,7 +49,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "test",
         "product_info": {
-            "product_id": "nike",
+            "product_id": 1,
             "brand_id": "nike",
             "category_id": "nike",
             "price": 1
@@ -63,7 +63,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "test",
         "product_info": {
-            "product_id": "nike",
+            "product_id": 1,
             "brand_id": "nike",
             "category_id": "nike",
             "price": 1
@@ -77,7 +77,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "test",
         "product_info": {
-            "product_id": "nike",
+            "product_id": 1,
             "brand_id": "nike",
             "category_id": "nike",
             "price": 1
@@ -91,7 +91,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "test",
         "product_info": {
-            "product_id": "nike",
+            "product_id": 1,
             "brand_id": "nike",
             "category_id": "nike",
             "price": 1
@@ -105,7 +105,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "test",
         "product_info": {
-            "product_id": "nike",
+            "product_id": 1,
             "brand_id": "nike",
             "category_id": "nike",
             "price": 1
@@ -119,7 +119,7 @@ db.user_tags.insertMany([
         "action": "BUY",
         "origin": "test",
         "product_info": {
-            "product_id": "nike",
+            "product_id": 1,
             "brand_id": "nike",
             "category_id": "nike",
             "price": 1

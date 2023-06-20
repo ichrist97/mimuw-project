@@ -2,8 +2,8 @@ package controller
 
 import (
 	"fmt"
-	db "mimuw-project/database"
-	model "mimuw-project/model"
+	db "tag-service/database"
+	model "tag-service/model"
 
 	"github.com/gofiber/fiber/v2"
 )

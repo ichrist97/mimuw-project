@@ -1,4 +1,4 @@
-module mimuw-project
+module tag-service
 
 go 1.20
 

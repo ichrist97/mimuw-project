@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	controller "mimuw-project/controller"
-	model "mimuw-project/model"
 	"os"
+	controller "tag-service/controller"
+	model "tag-service/model"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"

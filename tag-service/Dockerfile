@@ -1,7 +1,7 @@
 FROM golang:1.20-alpine as build
 
-ADD . /go/src/mimuw-project
-WORKDIR /go/src/mimuw-project
+ADD . /go/src/tag-service
+WORKDIR /go/src/tag-service
 
 # Download necessary Go modules
 COPY go.mod ./
@@ -18,7 +18,7 @@ FROM gcr.io/distroless/base-debian10
 
 WORKDIR /
 
-COPY --from=build /go/src/mimuw-project/out /app
+COPY --from=build /go/src/tag-service/out /app
 
 EXPOSE 8080
 

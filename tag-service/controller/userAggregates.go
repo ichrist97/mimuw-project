@@ -3,14 +3,18 @@ package controller
 import (
 	"fmt"
 	"math"
-	db "mimuw-project/database"
-	model "mimuw-project/model"
+	"reflect"
 	"strconv"
 	"strings"
+	db "tag-service/database"
+	model "tag-service/model"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsoncodec"
+	"go.mongodb.org/mongo-driver/bson/bsonrw"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -37,15 +41,18 @@ func deleteOldEntries(timestampFrom time.Time) (*mongo.DeleteResult, error) {
 func createTimeBoundaries(timestampFrom time.Time, timestampEnd time.Time) bson.A {
 	timeDiffMin := int(math.Ceil(timestampEnd.Sub(timestampFrom).Minutes()))
 	var boundaries bson.A
-	boundaries = append(boundaries, timestampFrom.Format(time.RFC3339))
+	//boundaries = append(boundaries, timestampFrom.Format(time.RFC3339))
+	boundaries = append(boundaries, timestampFrom)
 
 	var t = timestampFrom
 	for i := 0; i < timeDiffMin-1; i++ {
 		// one minute to each new bucket
 		t = t.Add(time.Minute)
-		boundaries = append(boundaries, t.Format(time.RFC3339))
+		//boundaries = append(boundaries, t.Format(time.RFC3339))
+		boundaries = append(boundaries, t)
 	}
-	boundaries = append(boundaries, timestampEnd.Format(time.RFC3339))
+	//boundaries = append(boundaries, timestampEnd.Format(time.RFC3339))
+	boundaries = append(boundaries, timestampEnd)
 	return boundaries
 }
 
@@ -129,14 +136,14 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 		matchCriteria["origin"] = query.Origin
 	}
 	if query.BrandId != "" {
-		matchCriteria["product_info.brand_id"] = query.BrandId
+		matchCriteria["productinfo.brandid"] = query.BrandId
 	}
 	if query.Origin != "" {
-		matchCriteria["product_info.category_id"] = query.CategoryId
+		matchCriteria["productinfo.categoryid"] = query.CategoryId
 	}
 
 	outputStage := bson.M{
-		"tags": bson.M{"$push": bson.M{"time": "$time", "product_price": "$product_info.price", "action": "$action"}},
+		"tags": bson.M{"$push": bson.M{"time": "$time", "product_price": "$productinfo.price", "action": "$action"}},
 	}
 	// add aggregations to mongo stage
 	if useCount {
@@ -170,6 +177,21 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 		fmt.Println(err.Error())
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
+
+	/*
+		decoderRegistry := bson.NewRegistryBuilder().
+			RegisterTypeDecoder(reflect.TypeOf(string("")), &MyDocumentDecoder{}).
+			Build()
+
+		var result model.AggregateQuery
+		for cursor.Next(db.Ctx) {
+			err := cursor.Decode(&result, bson.RawValueDecoder{Registry: decoderRegistry})
+			if err != nil {
+				// Handle decoding error
+			}
+			// Process the decoded document
+		}
+	*/
 
 	// parse results into columns wise structure
 	tableResults := transformToTable(results, useCount, useSum, action, query.Origin, query.BrandId, query.CategoryId)
@@ -210,6 +232,33 @@ func logAggrResponses(c *fiber.Ctx, res *model.AggregateResult) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+}
+
+// Custom decoder to handle type conversion errors
+type MyDocumentDecoder struct{}
+
+func (dec *MyDocumentDecoder) DecodeValue(ctx bsoncodec.DecodeContext, vr bsonrw.ValueReader, val reflect.Value) error {
+	switch val.Type() {
+	case reflect.TypeOf(time.Time{}):
+		if vr.Type() == bsontype.DateTime {
+			dt, err := vr.ReadDateTime()
+			if err != nil {
+				return err
+			}
+			// Perform custom conversion from time.Time to string
+			timeValue := time.Unix(dt/1000, 0)
+			stringValue := timeValue.Format("2006-01-02T15:04:05")
+			val.SetString(stringValue)
+			return nil
+		}
+	}
+
+	// Use default decoder for other fields
+	decoder, err := bson.DefaultRegistry.LookupDecoder(val.Type())
+	if err != nil {
+		return err
+	}
+	return decoder.DecodeValue(ctx, vr, val)
 }
 
 func transformToTable(results []model.AggregateQuery, CountAggr bool, SumAggr bool, action string, origin string, brandId string, categoryId string) model.AggregateResult {
