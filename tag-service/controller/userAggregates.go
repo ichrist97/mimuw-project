@@ -291,6 +291,11 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 	// create 1 minute buckets out of results
 	table := createBucketTable(results, query, buckets)
 
+	// log response and expected result
+	if debug {
+		logAggrResponses(c, table)
+	}
+
 	return c.JSON(*table)
 
 	// TODO write mongo query
