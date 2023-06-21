@@ -6,7 +6,6 @@ import (
 	controller "tag-service/controller"
 	model "tag-service/model"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -22,6 +21,7 @@ func debugMode() bool {
 	return DEBUG
 }
 
+/*
 func initKafkaProducer() (*kafka.Producer, string) {
 	// read from env
 	kafka_host := os.Getenv("KAFKA_HOST")
@@ -52,15 +52,18 @@ func initKafkaProducer() (*kafka.Producer, string) {
 	fmt.Println("Connected to kafka server")
 	return p, topic
 }
+*/
 
 func main() {
 	DEBUG := debugMode()
 
 	// init kafka producer
 	//kafka_producer, topic := initKafkaProducer()
-	var kafka_producer *kafka.Producer
-	kafka_producer = nil
-	topic := ""
+	/*
+		var kafka_producer *kafka.Producer
+		kafka_producer = nil
+		topic := ""
+	*/
 
 	app := fiber.New()
 
@@ -76,7 +79,8 @@ func main() {
 		// validate request body
 		body := new(model.UserTagEvent)
 		c.BodyParser(&body)
-		return controller.AddUserTag(c, body, kafka_producer, topic)
+		//return controller.AddUserTag(c, body, kafka_producer, topic)
+		return controller.AddUserTag(c, body)
 	})
 
 	// POST /user_profiles/{cookie}?time_range=<time_range>?limit=<limit>
