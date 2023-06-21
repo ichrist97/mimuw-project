@@ -5,6 +5,7 @@ import (
 	"time"
 
 	db "tag-service/database"
+	util "tag-service/util"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -37,7 +38,9 @@ type ErrorResponse struct {
 
 var validate = validator.New()
 
-func ValidateUserTagEvent(c *fiber.Ctx, debug bool) error {
+func ValidateUserTagEvent(c *fiber.Ctx) error {
+	debug := util.DebugMode()
+
 	var errors []*ErrorResponse
 	body := new(UserTagEvent)
 	c.BodyParser(&body)

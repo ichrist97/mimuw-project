@@ -5,24 +5,14 @@ import (
 	"os"
 	controller "tag-service/controller"
 	model "tag-service/model"
+	util "tag-service/util"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-func debugMode() bool {
-	// activate debug mode
-	DEBUG_MODE := os.Getenv("DEBUG")
-	DEBUG := false // default
-	if DEBUG_MODE == "1" {
-		DEBUG = true
-		fmt.Println("DEBUG MODE")
-	}
-	return DEBUG
-}
-
 func main() {
-	DEBUG := debugMode()
+	DEBUG := util.DebugMode()
 
 	app := fiber.New()
 
