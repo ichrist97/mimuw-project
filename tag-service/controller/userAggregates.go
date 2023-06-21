@@ -27,6 +27,7 @@ func contains(s []string, str string) bool {
 }
 
 func createTimeBoundaries(timestampFrom *time.Time, timestampEnd *time.Time) *[]time.Time {
+	// time boundary is inclusive at the beginning and exclusive at the end
 	timeDiffMin := int(math.Ceil((*timestampEnd).Sub(*timestampFrom).Minutes()))
 	buckets := []time.Time{}
 
@@ -38,7 +39,7 @@ func createTimeBoundaries(timestampFrom *time.Time, timestampEnd *time.Time) *[]
 		t = t.Add(time.Minute)
 		buckets = append(buckets, t)
 	}
-	buckets = append(buckets, *timestampEnd)
+	//buckets = append(buckets, *timestampEnd)
 	return &buckets
 }
 
@@ -214,11 +215,6 @@ func createBucketTable(results *[]model.UserTagEvent, query *model.AggregateRequ
 	for _, bucket := range *buckets {
 		cnt := cnt_map[bucket.String()]
 		price := sum_map[bucket.String()]
-
-		// only include not empty buckets
-		if cnt == 0 || price == 0 {
-			continue
-		}
 
 		// Truncate the time to minutes
 		trimmedTime := bucket.Truncate(time.Minute)
