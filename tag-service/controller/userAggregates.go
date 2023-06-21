@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
 	db "tag-service/database"
@@ -284,6 +285,12 @@ func logAggrResponses(c *fiber.Ctx, res *model.AggregateResult, query *model.Agg
 	// debug response from api
 	body := new(model.AggregateResult)
 	c.BodyParser(&body)
+
+	// ony log when generated response does not equal expected response
+	areEqual := reflect.DeepEqual(body, *res)
+	if areEqual {
+		return
+	}
 
 	// actual generated response
 	coll := db.DB.Database("mimuw").Collection("log_aggregations")
