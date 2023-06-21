@@ -225,11 +225,11 @@ func createBucketTable(results *[]model.UserTagEvent, query *model.AggregateRequ
 		useCategoryId = true
 	}
 	// add aggregates
-	if useSum {
-		cols = append(cols, "sum_price")
-	}
 	if useCnt {
 		cols = append(cols, "count")
+	}
+	if useSum {
+		cols = append(cols, "sum_price")
 	}
 
 	// init rows with default values
@@ -261,11 +261,11 @@ func createBucketTable(results *[]model.UserTagEvent, query *model.AggregateRequ
 		}
 
 		// append aggregate results
-		if useSum {
-			row = append(row, strconv.Itoa(price))
-		}
 		if useCnt {
 			row = append(row, strconv.Itoa(cnt))
+		}
+		if useSum {
+			row = append(row, strconv.Itoa(price))
 		}
 
 		// add to rows
