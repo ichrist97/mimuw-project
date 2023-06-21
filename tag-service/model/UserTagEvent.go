@@ -1,7 +1,10 @@
 package model
 
 import (
+	"fmt"
 	"time"
+
+	db "tag-service/database"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -34,7 +37,7 @@ type ErrorResponse struct {
 
 var validate = validator.New()
 
-func ValidateUserTagEvent(c *fiber.Ctx) error {
+func ValidateUserTagEvent(c *fiber.Ctx, debug bool) error {
 	var errors []*ErrorResponse
 	body := new(UserTagEvent)
 	c.BodyParser(&body)
@@ -48,7 +51,23 @@ func ValidateUserTagEvent(c *fiber.Ctx) error {
 			el.Value = err.Param()
 			errors = append(errors, &el)
 		}
+		if debug {
+			logBadAddUserTagRequest(body, errors)
+		}
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
 	return c.Next()
+}
+
+func logBadAddUserTagRequest(body *UserTagEvent, errors []*ErrorResponse) {
+	data := map[string]interface{}{
+		"req": *body,
+		"err": errors,
+	}
+
+	coll := db.DB.Database("mimuw").Collection("log_user_tags")
+	_, err := coll.InsertOne(db.Ctx, data)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
