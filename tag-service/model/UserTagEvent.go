@@ -13,7 +13,8 @@ import (
 )
 
 type Product struct {
-	ProductId  int    `json:"product_id" validate:"required,number"`
+	// use pointer because otherwise value "0" is not seen as valid in validator
+	ProductId  *int   `json:"product_id" validate:"required,number"`
 	BrandId    string `json:"brand_id" validate:"required"`
 	CategoryId string `json:"category_id" validate:"required"`
 	Price      int    `json:"price" validate:"required,number"`
