@@ -136,8 +136,6 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 		return c.SendStatus(500)
 	}
 
-	// TODO discard older events than 200 for a cookie
-
 	// create response
 	userProfile := model.UserProfile{Cookie: cookie, Views: viewsResults, Buys: buysResults}
 

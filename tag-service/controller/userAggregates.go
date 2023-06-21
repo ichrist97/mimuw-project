@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -24,17 +23,6 @@ func contains(s []string, str string) bool {
 		}
 	}
 	return false
-}
-
-func deleteOldEntries(timestampFrom time.Time) (*mongo.DeleteResult, error) {
-	// delete entries older than 24 hours in logical time
-	coll := db.DB.Database("mimuw").Collection("user_tags")
-	filter := bson.D{{"time", bson.D{{"lt", timestampFrom.Add(-(time.Hour * 24))}}}}
-	results, err := coll.DeleteMany(db.Ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
 }
 
 func createTimeBoundaries(timestampFrom *time.Time, timestampEnd *time.Time) *[]time.Time {
@@ -175,10 +163,6 @@ func initAggrMaps(buckets *[]time.Time) (map[string]int, map[string]int) {
 }
 
 func createBucketTable(results *[]model.UserTagEvent, query *model.AggregateRequest, buckets *[]time.Time) *model.AggregateResult {
-	/*
-		Iterate trough each result user tag
-		Add it to their respective bucket as cnt and sum price
-	*/
 	q := *query
 	useCnt := contains(q.Aggregates, "COUNT")
 	useSum := contains(q.Aggregates, "SUM_PRICE")
@@ -197,15 +181,6 @@ func createBucketTable(results *[]model.UserTagEvent, query *model.AggregateRequ
 				sum_map[bucket.String()] = sum_map[bucket.String()] + res.ProductInfo.Price
 			}
 		}
-	}
-	// DEBUG
-	// Pretty print the map
-	fmt.Println("MAPS")
-	for key, value := range cnt_map {
-		fmt.Printf("%s: %d\n", key, value)
-	}
-	for key, value := range sum_map {
-		fmt.Printf("%s: %d\n", key, value)
 	}
 
 	// add optional params
@@ -299,108 +274,13 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 
 	// log response and expected result
 	if debug {
-		logAggrResponses(c, table)
+		logAggrResponses(c, table, query)
 	}
 
 	return c.JSON(*table)
-
-	// TODO write mongo query
-	// group into 1 minute buckets
-	// result data structure as table columns
-	/*
-		matchCriteria := bson.M{
-			"action": query.Action,
-		}
-		// optional parameters
-		// BUG TODO filtering only by origin does not work
-		if query.Origin != "" {
-			matchCriteria["origin"] = query.Origin
-		}
-		if query.BrandId != "" {
-			matchCriteria["productinfo.brandid"] = query.BrandId
-		}
-		if query.Origin != "" {
-			matchCriteria["productinfo.categoryid"] = query.CategoryId
-		}
-
-		outputStage := bson.M{
-			"tags": bson.M{"$push": bson.M{"time": "$time", "product_price": "$productinfo.price", "action": "$action"}},
-		}
-		// add aggregations to mongo stage
-		if useCount {
-			outputStage["count"] = bson.M{"$sum": 1}
-		}
-
-		pipe := mongo.Pipeline{
-			{{
-				"$match", matchCriteria,
-			}},
-			{{"$bucket", bson.M{
-				"groupBy":    "$time",
-				"boundaries": boundaries,
-				"default":    "Other",
-				"output":     outputStage,
-			}}},
-		}
-
-
-		// pass the pipeline to the Aggregate() method
-		coll := db.DB.Database("mimuw").Collection("user_tags")
-		cursor, err := coll.Aggregate(db.Ctx, pipe)
-		if err != nil {
-			fmt.Println(err.Error())
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-
-		// TODO handle empty results as empty array instead of nil
-		// decode the results
-		var results []model.AggregateQuery
-		if err = cursor.All(db.Ctx, &results); err != nil {
-			fmt.Println(err.Error())
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-	*/
-
-	/*
-		decoderRegistry := bson.NewRegistryBuilder().
-			RegisterTypeDecoder(reflect.TypeOf(string("")), &MyDocumentDecoder{}).
-			Build()
-
-		var result model.AggregateQuery
-		for cursor.Next(db.Ctx) {
-			err := cursor.Decode(&result, bson.RawValueDecoder{Registry: decoderRegistry})
-			if err != nil {
-				// Handle decoding error
-			}
-			// Process the decoded document
-		}
-	*/
-
-	// parse results into columns wise structure
-	//tableResults := transformToTable(results, useCount, useSum, action, query.Origin, query.BrandId, query.CategoryId)
-
-	// TODO discard old data after query which is older than 24h logical
-	/*
-		_, err := deleteOldEntries(timestampFrom)
-		if err != {
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-	*/
-
-	// TODO Think about the number of possible aggregates,
-	// how to calculate them and possibly store globally for later querying.
-
-	// log response and expected result
-	/*
-		if debug {
-			logAggrResponses(c, table)
-		}
-	*/
-
-	//return c.JSON(*table)
 }
 
-func logAggrResponses(c *fiber.Ctx, res *model.AggregateResult) {
+func logAggrResponses(c *fiber.Ctx, res *model.AggregateResult, query *model.AggregateRequest) {
 	// debug response from api
 	body := new(model.AggregateResult)
 	c.BodyParser(&body)
@@ -411,77 +291,11 @@ func logAggrResponses(c *fiber.Ctx, res *model.AggregateResult) {
 	doc := map[string]interface{}{
 		"true":      body,
 		"generated": *res,
+		"query":     *query,
 	}
 
 	_, err := coll.InsertOne(db.Ctx, doc)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-}
-
-/*
-func transformToTable(results []model.AggregateQuery, CountAggr bool, SumAggr bool, action string, origin string, brandId string, categoryId string) model.AggregateResult {
-	cols := []string{"1m_bucket", "action"}
-	// dynamically add columns in request
-	if origin != "" {
-		cols = append(cols, "origin")
-	}
-	if brandId != "" {
-		cols = append(cols, "brand_id")
-	}
-	if categoryId != "" {
-		cols = append(cols, "category_id")
-	}
-	// add aggregate columns
-	if CountAggr {
-		cols = append(cols, "count")
-	}
-	if SumAggr {
-		cols = append(cols, "sum_price")
-	}
-
-	res := model.AggregateResult{Columns: cols}
-
-	// iterate buckets
-	for _, bucket := range results {
-		if bucket.Id == "Other" {
-			continue
-		}
-
-		// TODO make more efficent when init at the same time as cols
-		// cut off timestring for bucket name
-		bucketName := strings.TrimSuffix(bucket.Id, "Z")
-		row := []string{bucketName, action}
-		if origin != "" {
-			row = append(row, origin)
-		}
-		if brandId != "" {
-			row = append(row, brandId)
-		}
-		if categoryId != "" {
-			row = append(row, categoryId)
-		}
-
-		if CountAggr {
-			row = append(row, strconv.Itoa(bucket.Count))
-		}
-		if SumAggr {
-			sumPrices := calcSumPrices(bucket.Tags)
-			row = append(row, strconv.Itoa(sumPrices))
-		}
-
-		// append row to container
-		res.Rows = append(res.Rows, row)
-	}
-
-	return res
-}
-*/
-
-func calcSumPrices(tags []model.AggregateTag) int {
-	sum := 0
-	for _, tag := range tags {
-		sum += tag.ProductPrice
-	}
-	return sum
 }

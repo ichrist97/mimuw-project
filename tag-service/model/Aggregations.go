@@ -16,12 +16,6 @@ type AggregateResult struct {
 	Rows    [][]string `json:"rows"`
 }
 
-type AggregateQuery struct {
-	Id    string         `json:"_id" bson:"_id"`
-	Count int            `json:"count"`
-	Tags  []AggregateTag `json:"tags"`
-}
-
 type AggregateTag struct {
 	Action       string    `json:"action"`
 	ProductPrice int       `json:"product_price" bson:"product_price"`

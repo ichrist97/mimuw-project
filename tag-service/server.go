@@ -21,49 +21,8 @@ func debugMode() bool {
 	return DEBUG
 }
 
-/*
-func initKafkaProducer() (*kafka.Producer, string) {
-	// read from env
-	kafka_host := os.Getenv("KAFKA_HOST")
-	if len(kafka_host) == 0 {
-		kafka_host = "localhost:29092" // default
-	}
-	topic := os.Getenv("KAFKA_TOPIC")
-	if len(topic) == 0 {
-		topic = "user_tags"
-	}
-
-	// get client id hostname
-	client_hostname, err := os.Hostname()
-	if err != nil {
-		fmt.Printf("Failed to get hostname: %s\n", err)
-		os.Exit(1)
-	}
-
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": kafka_host,
-		"client.id":         client_hostname,
-		"acks":              "all"})
-
-	if err != nil {
-		fmt.Printf("Failed to create producer: %s\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("Connected to kafka server")
-	return p, topic
-}
-*/
-
 func main() {
 	DEBUG := debugMode()
-
-	// init kafka producer
-	//kafka_producer, topic := initKafkaProducer()
-	/*
-		var kafka_producer *kafka.Producer
-		kafka_producer = nil
-		topic := ""
-	*/
 
 	app := fiber.New()
 
@@ -79,7 +38,6 @@ func main() {
 		// validate request body
 		body := new(model.UserTagEvent)
 		c.BodyParser(&body)
-		//return controller.AddUserTag(c, body, kafka_producer, topic)
 		return controller.AddUserTag(c, body)
 	})
 
