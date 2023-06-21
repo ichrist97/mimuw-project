@@ -233,9 +233,17 @@ func createBucketTable(results *[]model.UserTagEvent, query *model.AggregateRequ
 	}
 
 	// init rows with default values
-	//rows := make([][]string, len(*buckets))
 	rows := [][]string{}
+
 	for _, bucket := range *buckets {
+		cnt := cnt_map[bucket.String()]
+		price := sum_map[bucket.String()]
+
+		// only include not empty buckets
+		if cnt == 0 || price == 0 {
+			continue
+		}
+
 		// Truncate the time to minutes
 		trimmedTime := bucket.Truncate(time.Minute)
 		// Format the time to the desired layout
@@ -253,8 +261,6 @@ func createBucketTable(results *[]model.UserTagEvent, query *model.AggregateRequ
 		}
 
 		// append aggregate results
-		cnt := cnt_map[bucket.String()]
-		price := sum_map[bucket.String()]
 		if useSum {
 			row = append(row, strconv.Itoa(price))
 		}
@@ -413,6 +419,7 @@ func logAggrResponses(c *fiber.Ctx, res *model.AggregateResult) {
 	}
 }
 
+/*
 func transformToTable(results []model.AggregateQuery, CountAggr bool, SumAggr bool, action string, origin string, brandId string, categoryId string) model.AggregateResult {
 	cols := []string{"1m_bucket", "action"}
 	// dynamically add columns in request
@@ -469,6 +476,7 @@ func transformToTable(results []model.AggregateQuery, CountAggr bool, SumAggr bo
 
 	return res
 }
+*/
 
 func calcSumPrices(tags []model.AggregateTag) int {
 	sum := 0
