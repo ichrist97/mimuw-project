@@ -71,12 +71,12 @@ func validateProfileReq(c *fiber.Ctx) (*string, *time.Time, *time.Time, *int, er
 	return &cookie, &timestampFrom, &timestampEnd, &limit, nil
 }
 
-func profileWorker(id int, wg *sync.WaitGroup, filter *bson.D, limit *int, action string, resultChan chan<- *model.UserProfileResult) {
+func profileWorker(id int, wg *sync.WaitGroup, filter *bson.D, limit *int, action string, resultChan chan<- *model.UserProfileWorkerResult) {
 	defer wg.Done() // Signal the WaitGroup that this goroutine is done
 	// Perform some work
 	res, err := queryProfile(filter, limit)
 	// Send the result through the channel
-	chanRes := model.UserProfileResult{Results: res, Err: err, Action: action}
+	chanRes := model.UserProfileWorkerResult{Results: res, Err: err, Action: action}
 	resultChan <- &chanRes
 }
 
@@ -116,7 +116,7 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 	wg.Add(2) // wait for two goroutines
 
 	// Create a channel to receive the results
-	resultChan := make(chan *model.UserProfileResult)
+	resultChan := make(chan *model.UserProfileWorkerResult)
 
 	// get views
 	viewsFilter := bson.D{

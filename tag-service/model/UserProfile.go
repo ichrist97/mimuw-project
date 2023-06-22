@@ -8,7 +8,7 @@ type UserProfile struct {
 	Buys []UserTagEvent `json:"buys"`
 }
 
-type UserProfileResult struct {
+type UserProfileWorkerResult struct {
 	Results *[]UserTagEvent
 	Err     error
 	Action  string
