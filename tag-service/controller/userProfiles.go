@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	db "tag-service/database"
@@ -34,13 +36,13 @@ func logResponses(c *fiber.Ctx, res model.UserProfile) {
 	}
 }
 
-func GetUserProfiles(c *fiber.Ctx, debug bool) error {
+func validateProfileReq(c *fiber.Ctx) (*string, *time.Time, *time.Time, *int, error) {
 	var cookie = c.Params("cookie")
 	var timeRangeStr = c.Query("time_range")
 
 	if timeRangeStr == "" {
 		fmt.Println("Bad request: time range required")
-		return c.Status(fiber.StatusBadRequest).SendString("Time range required")
+		return nil, nil, nil, nil, errors.New("time range required")
 	}
 	// check and parse time range
 	var timeRangeSplit = strings.Split(timeRangeStr, "_")
@@ -51,7 +53,7 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 	var timestampEnd, err1 = time.Parse(timeFormat, timeRangeSplit[1])
 	if err0 != nil || err1 != nil {
 		fmt.Println("Failed parsing time range")
-		return c.Status(fiber.StatusBadRequest).SendString("Invalid time range")
+		return nil, nil, nil, nil, err0
 	}
 
 	// parse limit
@@ -59,17 +61,62 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil && len(limitStr) > 0 {
 		fmt.Println("Bad request: Limit must be integer")
-		return c.Status(fiber.StatusBadRequest).SendString("Limit must be integer")
+		return nil, nil, nil, nil, err
 	}
 	if limit == 0 {
 		limit = 200 // default
 	}
 
+	// success
+	return &cookie, &timestampFrom, &timestampEnd, &limit, nil
+}
+
+func profileWorker(id int, wg *sync.WaitGroup, filter *bson.D, limit *int, action string, resultChan chan<- *model.UserProfileResult) {
+	defer wg.Done() // Signal the WaitGroup that this goroutine is done
+	// Perform some work
+	res, err := queryProfile(filter, limit)
+	// Send the result through the channel
+	chanRes := model.UserProfileResult{Results: res, Err: err, Action: action}
+	resultChan <- &chanRes
+}
+
+func queryProfile(filter *bson.D, limit *int) (*[]model.UserTagEvent, error) {
 	// read user tags for cookie from database
 	coll := db.DB.Database("mimuw").Collection("user_tags")
 
 	// set limit and sort descending by timestampg
-	opts := options.Find().SetLimit(int64(limit)).SetSort(bson.D{{"time", -1}})
+	opts := options.Find().SetLimit(int64(*limit)).SetSort(bson.D{{"time", -1}})
+
+	cursor, err := coll.Find(db.Ctx, *filter, opts)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	// parse into struct
+	var results []model.UserTagEvent
+	if err = cursor.All(db.Ctx, &results); err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	// empty result
+	if results == nil {
+		results = []model.UserTagEvent{}
+	}
+	return &results, nil
+}
+
+func GetUserProfiles(c *fiber.Ctx, debug bool) error {
+	cookie, timestampFrom, timestampEnd, limit, err := validateProfileReq(c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2) // wait for two goroutines
+
+	// Create a channel to receive the results
+	resultChan := make(chan *model.UserProfileResult)
 
 	// get views
 	viewsFilter := bson.D{
@@ -78,28 +125,13 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 			bson.A{
 				bson.D{{"cookie", bson.D{{"$eq", cookie}}}},
 				bson.D{{"action", bson.D{{"$eq", "VIEW"}}}},
-				bson.D{{"time", bson.D{{"$gte", primitive.NewDateTimeFromTime(timestampFrom)}}}},
-				bson.D{{"time", bson.D{{"$lte", primitive.NewDateTimeFromTime(timestampEnd)}}}},
+				bson.D{{"time", bson.D{{"$gte", primitive.NewDateTimeFromTime(*timestampFrom)}}}},
+				bson.D{{"time", bson.D{{"$lte", primitive.NewDateTimeFromTime(*timestampEnd)}}}},
 			},
 		},
 	}
-
-	viewsCursor, viewsErr := coll.Find(db.Ctx, viewsFilter, opts)
-	if viewsErr != nil {
-		fmt.Println(err.Error())
-		return c.SendStatus(500)
-	}
-
-	// parse into struct
-	var viewsResults []model.UserTagEvent
-	if err = viewsCursor.All(db.Ctx, &viewsResults); err != nil {
-		fmt.Println(err.Error())
-		return c.SendStatus(500)
-	}
-	// empty result
-	if viewsResults == nil {
-		viewsResults = []model.UserTagEvent{}
-	}
+	// start goroutine for views results
+	go profileWorker(1, &wg, &viewsFilter, limit, "VIEW", resultChan)
 
 	// get buys
 	buysFilter := bson.D{
@@ -108,36 +140,36 @@ func GetUserProfiles(c *fiber.Ctx, debug bool) error {
 			bson.A{
 				bson.D{{"cookie", bson.D{{"$eq", cookie}}}},
 				bson.D{{"action", bson.D{{"$eq", "BUY"}}}},
-				bson.D{{"time", bson.D{{"$gte", primitive.NewDateTimeFromTime(timestampFrom)}}}},
-				bson.D{{"time", bson.D{{"$lte", primitive.NewDateTimeFromTime(timestampEnd)}}}},
+				bson.D{{"time", bson.D{{"$gte", primitive.NewDateTimeFromTime(*timestampFrom)}}}},
+				bson.D{{"time", bson.D{{"$lte", primitive.NewDateTimeFromTime(*timestampEnd)}}}},
 			},
 		},
 	}
+	// start goroutine for buys results
+	go profileWorker(2, &wg, &buysFilter, limit, "BUY", resultChan)
 
-	buysCursor, buysErr := coll.Find(db.Ctx, buysFilter, opts)
-	if buysErr != nil {
-		fmt.Println(err.Error())
-		return c.SendStatus(500)
-	}
+	// wait for goroutines to finish and close channels
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
 
-	// parse into struct
+	// collect results
+	var viewsResults []model.UserTagEvent
 	var buysResults []model.UserTagEvent
-	if err = buysCursor.All(db.Ctx, &buysResults); err != nil {
-		fmt.Println(err.Error())
-		return c.SendStatus(500)
-	}
-	// empty result
-	if buysResults == nil {
-		buysResults = []model.UserTagEvent{}
-	}
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return c.SendStatus(500)
+	for result := range resultChan {
+		if result.Err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(result.Err.Error())
+		}
+		if result.Action == "VIEW" {
+			viewsResults = *result.Results
+		} else if result.Action == "BUY" {
+			buysResults = *result.Results
+		}
 	}
 
 	// create response
-	userProfile := model.UserProfile{Cookie: cookie, Views: viewsResults, Buys: buysResults}
+	userProfile := model.UserProfile{Cookie: *cookie, Views: viewsResults, Buys: buysResults}
 
 	// log response and expected result
 	if debug {

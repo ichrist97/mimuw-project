@@ -7,3 +7,9 @@ type UserProfile struct {
 	// sorted in descending time order
 	Buys []UserTagEvent `json:"buys"`
 }
+
+type UserProfileResult struct {
+	Results *[]UserTagEvent
+	Err     error
+	Action  string
+}
