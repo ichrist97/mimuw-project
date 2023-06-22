@@ -16,6 +16,17 @@ func DebugMode() bool {
 	return debug
 }
 
+func AggregationMode() bool {
+	// activate aggregations
+	aggr_mode := os.Getenv("AGGR")
+	aggr := true // default
+	if aggr_mode == "0" {
+		aggr = false
+		fmt.Println("AGGREGATIONS DISABLED")
+	}
+	return aggr
+}
+
 func Contains(s []string, str string) bool {
 	/**
 	 * check if a string is contained in a list of strings

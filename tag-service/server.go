@@ -12,7 +12,8 @@ import (
 )
 
 func main() {
-	DEBUG := util.DebugMode()
+	debug := util.DebugMode()
+	aggr_enabled := util.AggregationMode()
 
 	app := fiber.New()
 
@@ -34,13 +35,16 @@ func main() {
 	// POST /user_profiles/{cookie}?time_range=<time_range>?limit=<limit>
 	// use case 2 getting user profiles
 	app.Post("/user_profiles/:cookie", func(c *fiber.Ctx) error {
-		return controller.GetUserProfiles(c, DEBUG)
+		return controller.GetUserProfiles(c, debug)
 	})
 
 	// POST /aggregates?time_range=<time_from>_<time_to>&action=BUY&brand_id=Nike&aggregates=COUNT
 	// use case 3 aggregated user actions / statistics
 	app.Post("/aggregates", func(c *fiber.Ctx) error {
-		return controller.GetAggregate(c, DEBUG)
+		if !aggr_enabled {
+			return c.SendStatus(fiber.StatusNotImplemented)
+		}
+		return controller.GetAggregate(c, debug)
 	})
 
 	PORT := os.Getenv("PORT")
