@@ -8,6 +8,7 @@ import (
 	"strings"
 	db "tag-service/database"
 	model "tag-service/model"
+	"tag-service/util"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,15 +17,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
 
 func createTimeBoundaries(timestampFrom *time.Time, timestampEnd *time.Time) *[]time.Time {
 	// time boundary is inclusive at the beginning and exclusive at the end
@@ -39,7 +31,6 @@ func createTimeBoundaries(timestampFrom *time.Time, timestampEnd *time.Time) *[]
 		t = t.Add(time.Minute)
 		buckets = append(buckets, t)
 	}
-	//buckets = append(buckets, *timestampEnd)
 	return &buckets
 }
 
@@ -127,7 +118,6 @@ func validateQuery(c *fiber.Ctx, debug bool) (*model.AggregateRequest, *time.Tim
 	var timeFormat = "2006-01-02T15:04:05" // exactly this format
 	var timestampFrom, err0 = time.Parse(timeFormat, timeRangeSplit[0])
 	var timestampEnd, err1 = time.Parse(timeFormat, timeRangeSplit[1])
-	fmt.Println(timestampFrom, timestampEnd)
 	if err0 != nil || err1 != nil {
 		return nil, nil, nil, err0
 	}
@@ -135,7 +125,7 @@ func validateQuery(c *fiber.Ctx, debug bool) (*model.AggregateRequest, *time.Tim
 	// check action query
 	var action = query.Action
 	var validActions = []string{"BUY", "VIEW"}
-	if action == "" || !contains(validActions, action) {
+	if action == "" || !util.Contains(validActions, action) {
 		return nil, nil, nil, errors.New("Valid action required")
 	}
 
@@ -145,7 +135,7 @@ func validateQuery(c *fiber.Ctx, debug bool) (*model.AggregateRequest, *time.Tim
 		return nil, nil, nil, errors.New("At least one aggregation required")
 	}
 	for _, aggr := range query.Aggregates {
-		if !contains(validAggregates, aggr) {
+		if !util.Contains(validAggregates, aggr) {
 			return nil, nil, nil, errors.New("Invalid aggregates")
 		}
 	}
@@ -166,8 +156,8 @@ func initAggrMaps(buckets *[]time.Time) (map[string]int, map[string]int) {
 
 func createBucketTable(results *[]model.UserTagEvent, query *model.AggregateRequest, buckets *[]time.Time) *model.AggregateResult {
 	q := *query
-	useCnt := contains(q.Aggregates, "COUNT")
-	useSum := contains(q.Aggregates, "SUM_PRICE")
+	useCnt := util.Contains(q.Aggregates, "COUNT")
+	useSum := util.Contains(q.Aggregates, "SUM_PRICE")
 
 	cols := []string{"1m_bucket", "action"}
 	cnt_map, sum_map := initAggrMaps(buckets)

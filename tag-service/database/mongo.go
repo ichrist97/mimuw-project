@@ -60,6 +60,6 @@ func ConnectDB() *mongo.Client {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	fmt.Println("Connected to MongoDB")
+	fmt.Printf("Connected to MongoDB: %s\n", mongo_host)
 	return client
 }

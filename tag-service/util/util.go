@@ -15,3 +15,15 @@ func DebugMode() bool {
 	}
 	return debug
 }
+
+func Contains(s []string, str string) bool {
+	/**
+	 * check if a string is contained in a list of strings
+	 */
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
