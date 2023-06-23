@@ -11,7 +11,6 @@ func DebugMode() bool {
 	debug := false // default
 	if debug_mode == "1" {
 		debug = true
-		fmt.Println("DEBUG MODE")
 	}
 	return debug
 }

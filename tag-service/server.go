@@ -13,6 +13,9 @@ import (
 
 func main() {
 	debug := util.DebugMode()
+	if debug {
+		fmt.Println("DEBUG MODE")
+	}
 	aggr_enabled := util.AggregationMode()
 
 	app := fiber.New()

@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"reflect"
@@ -249,19 +247,6 @@ func GetAggregate(c *fiber.Ctx, debug bool) error {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
 
-	if debug {
-		cacheKey := getCacheKey(query)
-		// log cacheKey in DB
-		coll := db.DB.Database("mimuw").Collection("aggr_cache")
-		doc := map[string]interface{}{
-			"key": cacheKey,
-		}
-		_, err = coll.InsertOne(db.Ctx, doc)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-	}
-
 	results, err := queryDatabase(timestampFrom, timestampEnd, query)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -306,29 +291,4 @@ func logAggrResponses(c *fiber.Ctx, res *model.AggregateResult, query *model.Agg
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-}
-
-func getCacheKey(query *model.AggregateRequest) string {
-	keys := append([]string{query.TimeRange, query.Action, query.Origin, query.BrandId, query.CategoryId}, query.Aggregates...)
-	keyStr := strings.Join(keys, "")
-	hashKey := hashStr(keyStr)
-	return hashKey
-}
-
-func hashStr(str string) string {
-	// Convert the input string to bytes
-	inputBytes := []byte(str)
-
-	// Create a new SHA-256 hash object
-	hash := sha256.New()
-
-	// Write the input bytes to the hash object
-	hash.Write(inputBytes)
-
-	// Get the final hash sum as a byte slice
-	hashSum := hash.Sum(nil)
-
-	// Convert the hash sum to a hexadecimal string
-	hashString := hex.EncodeToString(hashSum)
-	return hashString
 }
