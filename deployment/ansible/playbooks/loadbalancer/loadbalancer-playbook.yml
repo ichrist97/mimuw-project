@@ -1,0 +1,25 @@
+---
+- name: Start loadbalancer
+  hosts: loadbalancer
+  tasks:
+    - name: Create directory
+      file:
+        path: /home/st103/loadbalancer
+        state: directory
+    - name: Copy dockerfile and haproxy config
+      become: true
+      become_user: root
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop:
+        - src: Dockerfile
+          dest: /home/st103/loadbalancer/Dockerfile
+        - src: haproxy.cfg
+          dest: /home/st103/loadbalancer/haproxy.cfg
+    - name: Build image of haproxy
+      become: true
+      shell: docker build -t loadbalancer /home/st103/loadbalancer
+    - name: Run docker container of haproxy
+      become: true
+      shell: docker run -d --net="host" --privileged --restart unless-stopped --name lb loadbalancer

@@ -5,16 +5,13 @@ st103vm1[01:10].rtb-lab.pl
 st103vm101.rtb-lab.pl
 
 [services]
-st103vm1[02:03].rtb.lab.pl
+st103vm1[02:03].rtb-lab.pl
 
-[mongodb:shard]
-st103vm1[04:06].rtb-lab.pl
-
-[mongodb:config]
-st103vm107.rtb-lab.pl
-
-[mongodb:router]
-st103vm108.rtb-lab.pl
-
-[kafka]
-st103vm1[09:10].rtb-lab.pl
+[mongo]
+shard1svr ansible_host=st103vm104.rtb-lab.pl ansible_user=st103 inventory_name=shard1
+shard2svr ansible_host=st103vm105.rtb-lab.pl ansible_user=st103 inventory_name=shard2
+shard3svr ansible_host=st103vm106.rtb-lab.pl ansible_user=st103 inventory_name=shard3
+shard4svr ansible_host=st103vm109.rtb-lab.pl ansible_user=st103 inventory_name=shard4
+shard5svr ansible_host=st103vm110.rtb-lab.pl ansible_user=st103 inventory_name=shard5
+configsvr ansible_host=st103vm107.rtb-lab.pl ansible_user=st103 inventory_name=config
+routersvr ansible_host=st103vm108.rtb-lab.pl ansible_user=st103 inventory_name=router

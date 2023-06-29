@@ -1,0 +1,14 @@
+---
+- name: Start services
+  hosts: services
+  tasks:
+    - name: Download git repository of mimuw-project
+      ansible.builtin.git:
+        repo: "https://github.com/ichrist97/mimuw-project"
+        dest: ~/mimuw-project
+    - name: Build image of service
+      shell: docker build -t tag-service ~/mimuw-project/tag-service
+    - name: Run docker container of service
+      shell: "docker run -d -e MONGO_HOST='{{ db_ipv4 }}' -p 3000:3000 --restart unless-stopped --name ts tag-service"
+      vars:
+        db_ipv4: 10.112.103.108
