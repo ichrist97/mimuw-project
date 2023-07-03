@@ -43,3 +43,14 @@ There are several options for the service, which can be set as environment varia
 - PORT: Port on which the serivce runs (default: 3000)
 - DEBUG: Prints debug information in the log and saves generated and true results of queries in the database (default: 0)
 - AGGR: This flag activates whether use case 3 aggregations are calculated or deactivated and returning a 501 not implemented code. (default: 1)
+
+## Experiment notes
+
+Before every experiment reset the database:
+
+```bash
+mongo
+use mimuw
+db.user_tags.drop()
+sh.shardCollection("mimuw.user_tags", { "cookie": "hashed" })
+```
