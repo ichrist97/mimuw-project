@@ -1,0 +1,125 @@
+---
+- name: Setup sharded mongodb cluster
+  hosts: mongo
+  become: true
+  tasks:
+    - name: Populate service facts
+      service_facts:
+    - name: Stop mongo service
+      when: "'mongod' in services"
+      become: true
+      become_user: root
+      ansible.builtin.systemd:
+        state: stopped
+        name: mongod
+        enabled: true
+    - name: Uninstall old mongodb
+      apt:
+        name: mongodb-org
+        purge: true
+        state: absent
+    - name: Remove old mongodb data
+      become: true
+      ansible.builtin.file:
+        state: absent
+        path: "{{item}}"
+      with_items:
+        - /var/log/mongodb
+        - /var/lib/mongodb
+    - name: Add mongodb apt signing key
+      become: true
+      become_user: root
+      ansible.builtin.apt_key:
+        url: https://www.mongodb.org/static/pgp/server-4.4.asc
+        state: present
+    - name: Add mongodb repository
+      become: true
+      become_user: root
+      ansible.builtin.apt_repository:
+        repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse"
+        state: present
+        update_cache: yes
+    - name: Install mongodb on all machines
+      become: true
+      become_user: root
+      apt:
+        name: mongodb-org
+        state: latest
+    - name: Start mongo service
+      become: true
+      become_user: root
+      ansible.builtin.systemd:
+        state: started
+        name: mongod
+        enabled: true
+    - name: Fill shard config file
+      hosts: mongo:&shard
+      gather_facts: yes
+      become: true
+      template:
+        src: config/shard_template.conf.j2
+        dest: /etc/mongod.conf
+      vars:
+        ipv4_adress: "{{ansible_default_ipv4.adress}}"
+        inventory_name: "{{ inventory_hostname }}"
+    - name: Restart shard server with config file
+      hosts: mongo:&shard
+      become: true
+      become_user: root
+      ansible.builtin.systemd:
+        state: restarted
+        name: mongod
+    - name: Initiate shard server
+      hosts: mongo:&shard
+      become: true
+      become_user: root
+      shell: mongo --eval "rs.initiate()"
+    - name: Fill config server config file
+      hosts: mongo:&config
+      gather_facts: yes
+      become: true
+      template:
+        src: config/config_template.conf.j2
+        dest: /etc/mongod.conf
+      vars:
+        ipv4_adress: "{{ansible_default_ipv4.adress}}"
+    - name: Restart config server with config file
+      hosts: mongo:&config
+      become: true
+      become_user: root
+      ansible.builtin.systemd:
+        state: restarted
+        name: mongod
+    - name: Initiate config server
+      hosts: mongo:&config
+      become: true
+      become_user: root
+      shell: mongo --eval "rs.initiate()"
+    - name: Stop mongod service for router
+      hosts: mongo:&router
+      become: true
+      become_user: root
+      ansible.builtin.systemd:
+        state: stopped
+        name: mongod
+        enabled: false
+    - name: Fill config server config file
+      hosts: mongo:&router
+      gather_facts: yes
+      become: true
+      become_user: root
+      template:
+        src: config/mongos.service_template.j2
+        dest: /etc/systemd/system/mongos.service
+      vars:
+        ipv4_adress: "{{ansible_default_ipv4.adress}}"
+        ipv4_configsvr: hostvars[config]['ansible_default_ipv4']['address']
+    - name: Start mongos router service
+      hosts: mongo:&router
+      become: true
+      become_user: root
+      ansible.builtin.systemd:
+        state: start
+        name: mongos
+        enabled: true
+      # TODO shard ips
