@@ -8,6 +8,9 @@
         dest: ~/mimuw-project
     - name: Build image of service
       shell: docker build -t tag-service ~/mimuw-project/tag-service
+    - name: Stop all running containers
+      become: true
+      shell: docker stop $(docker ps -aq) || true && docker rm $(docker rm ts) || true
     - name: Run docker container of service
       shell: "docker run -d -e MONGO_HOST='{{ db_ipv4 }}' -p 3000:3000 --restart unless-stopped --name ts tag-service"
       vars:

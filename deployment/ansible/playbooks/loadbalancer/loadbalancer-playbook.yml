@@ -20,6 +20,9 @@
     - name: Build image of haproxy
       become: true
       shell: docker build -t loadbalancer /home/st103/loadbalancer
+    - name: Stop previous running containers
+      become: true
+      shell: docker stop $(docker ps -aq) || true && docker rm lb || true
     - name: Run docker container of haproxy
       become: true
       shell: docker run -d --net="host" --privileged --restart unless-stopped --name lb loadbalancer
