@@ -15,3 +15,9 @@ shard4svr ansible_host=st103vm109.rtb-lab.pl ansible_user=st103 inventory_name=s
 shard5svr ansible_host=st103vm110.rtb-lab.pl ansible_user=st103 inventory_name=shard5
 configsvr ansible_host=st103vm107.rtb-lab.pl ansible_user=st103 inventory_name=config
 routersvr ansible_host=st103vm108.rtb-lab.pl ansible_user=st103 inventory_name=router
+
+# Sets variables applied to all hosts.
+[all:vars]
+# Since the default version of Python on most Ubuntu distributions is Python 2
+# set Ansible to use Python 3 on all managed hosts.
+ansible_python_interpreter=/usr/bin/python3
