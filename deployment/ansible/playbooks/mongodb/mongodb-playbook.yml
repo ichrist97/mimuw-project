@@ -60,7 +60,7 @@
         src: config/shard_template.conf.j2
         dest: /etc/mongod.conf
       vars:
-        ipv4_adress: "{{ansible_default_ipv4.adress}}"
+        ipv4_address: "{{ansible_default_ipv4.address}}"
         inventory_name: "{{ inventory_hostname }}"
     - name: Restart shard server with config file
       hosts: mongo:&shard
@@ -82,7 +82,7 @@
         src: config/config_template.conf.j2
         dest: /etc/mongod.conf
       vars:
-        ipv4_adress: "{{ansible_default_ipv4.adress}}"
+        ipv4_address: "{{ansible_default_ipv4.address}}"
     - name: Restart config server with config file
       hosts: mongo:&config
       become: true
@@ -112,7 +112,7 @@
         src: config/mongos.service_template.j2
         dest: /etc/systemd/system/mongos.service
       vars:
-        ipv4_adress: "{{ansible_default_ipv4.adress}}"
+        ipv4_address: "{{ansible_default_ipv4.address}}"
         ipv4_configsvr: hostvars[config]['ansible_default_ipv4']['address']
     - name: Start mongos router service
       hosts: mongo:&router

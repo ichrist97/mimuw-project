@@ -1,0 +1,32 @@
+[Unit]
+Description=High-performance, schema-free document-oriented database
+After=network.target
+Documentation=https://docs.mongodb.org/manual
+
+[Service]
+User=mongodb
+Group=mongodb
+ExecStart=/usr/bin/mongos --configdb config/{{ipv4_configsvr}}:27017 --bind_ip 127.0.0.1,{{ipv4_address}}
+PIDFile=/var/run/mongodb/mongos.pid
+# file size
+LimitFSIZE=infinity
+# cpu time
+LimitCPU=infinity
+# virtual memory size
+LimitAS=infinity
+# open files
+LimitNOFILE=64000
+# processes/threads
+LimitNPROC=64000
+# locked memory
+LimitMEMLOCK=infinity
+# total threads (user+kernel)
+TasksMax=infinity
+TasksAccounting=false
+#Type=forking
+
+# Recommended limits for for mongod as specified in
+# http://docs.mongodb.org/manual/reference/ulimit/#recommended-settings
+
+[Install]
+WantedBy=multi-user.target
