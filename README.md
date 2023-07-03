@@ -63,3 +63,5 @@ I had some ideas to improve the effiecieny of querying the database, which was t
 The deployment is partially automated using `Ansible`. All the configuration files and playbooks can be found in the `deployment` directory. The biggest challenge in deployment is the MongoDB cluster as it requires a lot of configurations. The provided ansible playbook does not work completely as there are some issues when accessing the internal mongo shell itself. Other than that every component can be deployed by playbooks in automated way.
 
 For further information, the concrete steps for deployment are documented in another [document here](deployment/ansible/setup.md).
+
+The status of the system can be seen in the HAproxy frontend at [http://st103vm101.rtb-lab.pl:10000/](http://st103vm101.rtb-lab.pl:10000/).
